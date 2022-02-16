@@ -1,0 +1,143 @@
+{% extends "home/layout/base.html" %}
+
+{% block title %}
+    <title>Sogo hotel | chi tiết phòng</title>
+{% endblock %}
+
+{% block heading %}
+    Chi tiết phòng
+{% endblock %}
+
+{% block date_time %}{% endblock %}
+{% block content %}
+    <section class="section pb-4">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-md-7">
+                    <h3 class="heading" data-aos="fade-up">Chi tiết phòng</h3>
+                </div>
+            </div>
+            <div class="">
+                <div class="row">
+                    {% if room %}
+                        <div class="col-md-6 mb-3 mb-lg-0 col-lg-7">
+                            <img class="w-100" src="{{ room.image }}"
+                                 data-aos="fade-up">
+                        </div>
+                        <div class="col-md-6 mb-3 mb-md-0 col-lg-5" data-aos="fade-up">
+                            <span class="title font-weight-normal">{{ room.kind_of_room.kind_of_room_name }}</span>
+                            <div class="description font-weight-normal p-1" style="color:green">Số
+                                phòng: {{ room.room_number }}</div>
+                            <div class="people p-1">Số lượng người tiêu chuẩn: {{ room.standard_number }}</div>
+                            <div class="people p-1">Số lượng người tối đa: {{ room.maximum_number }}</div>
+                            <h3 class="price p-1"> {{ "{0:,.0f}".format(room.price) }} VNĐ/ 1 NGÀY</h3>
+                            <br><br>
+                            <div id="room-detail-{{ room.id }}">
+                                {% if room_list %}
+                                    {% if "{0}".format(room.id) in room_list %}
+                                        <div class="button-add bg-secondary"
+                                             onclick="add_to_book_room({{ room.id }},'{{ room.room_number }}','{{ room.kind_of_room.kind_of_room_name }}',{{ room.price }})">
+                                            <a class="text-white" href="javascript: void(0)"><i
+                                                    class=" fas fa-cart-plus"></i> Hủy khỏi giỏ
+                                                hàng</a>
+                                        </div>
+                                    {% else %}
+                                        <div class="button-add"
+                                             onclick="add_to_book_room({{ room.id }},'{{ room.room_number }}','{{ room.kind_of_room.kind_of_room_name }}',{{ room.price }})">
+                                            <a href="javascript: void(0)"><i class=" fas fa-cart-plus"></i> Thêm vào giỏ
+                                                hàng</a>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="button-add"
+                                         onclick="add_to_book_room({{ room.id }},'{{ room.room_number }}','{{ room.kind_of_room.kind_of_room_name }}',{{ room.price }})">
+                                        <a href="javascript: void(0)"><i class=" fas fa-cart-plus"></i> Thêm vào giỏ
+                                            hàng</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="button-done">
+                                <a href="{{ url_for('reservations') }}"><i class=" fas fa-clipboard-check"></i> Đặt
+                                    phòng ngay</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <br>
+            </div>
+            <h3>Mô tả phòng</h3>
+            <hr>
+            <div>
+                {% if room %} {{ room.description }} {% else %} Không có thông tin miêu tả! {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="section pb-4">
+        <div class="container">
+            <h2>Bình luận</h2>
+            {% if current_user.is_authenticated %}
+                <div class="form-group">
+                <textarea maxlength="255" class="form-control" id="comment-{{ room.id }}"
+                          rows="3">Phòng ở tuyệt vời...</textarea>
+                </div>
+                <div class="pb-4">
+                    <button type="button" class="btn btn-warning text-white" onclick="addComment({{ room.id }})">Thêm
+                        đánh
+                        giá
+                    </button>
+                </div>
+            {% else %}
+                <p>Đăng nhập để bình luận!</p>
+            {% endif %}
+            <div class="p-2" id="comment">
+                {% if  comments.items %}
+                    {% for comment in comments.items %}
+                        <div class="media p-3">
+                            <img src="{{ comment.user.avatar }}" alt="John Doe"
+                                 class="mr-3 mt-3 rounded-circle" style="width:60px;">
+                            <div class="media-body">
+                                <h4>{{ comment.user.username }}<small
+                                        class="pl-1"><i class="moment-date">{{ comment.created_date }}</i></small></h4>
+                                <p>{{ comment.content }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="custom-pagination">
+                <ul class="list-unstyled">
+                    {% for page in comments.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page %}
+                            {% if page != comments.page %}
+                                <li><a class="text-warning" onclick="moveComment({{ room.id }}, {{ page }})"
+                                       href="javascript:void(0)">{{ page }}</a>
+                                </li>
+
+                            {% else %}
+                                <li><a class="text-white bg-warning"
+                                       href="javascript:void(0)"
+                                       onclick="moveComment({{ room.id }}, {{ page }})">{{ page }}</a>
+                            {% endif %}
+                        {% else %}
+                            <span class=ellipsis>…</span>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </section>
+    <script>
+        window.onload = function(){
+            let d = document.getElementsByClassName("moment-date")
+            for ( let i = 0; i < d.length ; i++)
+                d[i].innerText = moment(d[i].innerText).locale('vi').fromNow()
+        }
+    </script>
+{% endblock %}
+
+{% block tail_js %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/home/comment.js') }}"></script>
+{% endblock %}

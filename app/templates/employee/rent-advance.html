@@ -1,0 +1,240 @@
+{% extends 'employee/layout/base.html' %}
+
+{% block title %}
+    <title>Nhận phòng</title>
+{% endblock %}
+
+{% block content %}
+    <div class="page-wrapper">
+        <div class="page-breadcrumb bg-white">
+            <div class="container-fluid p-0">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            {% if category.__eq__('error') %}
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <strong><i class="fas fa-exclamation-circle"></i></strong> {{ message }}
+                                </div>
+                            {% elif category.__eq__('success') %}
+                                <div class="alert alert-success alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <strong><i class="fas fa-exclamation-circle"></i></strong> {{ message }}
+                                </div>
+                            {% elif category.__eq__('info') %}
+                                <div class="alert alert-info alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <strong><i class="fas fa-exclamation-circle"></i></strong> {{ message }}
+                                </div>
+                            {% elif category.__eq__('warning') %}
+                                <div class="alert alert-warning alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <strong><i class="fas fa-exclamation-circle"></i></strong> {{ message }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="white-box shadow-lg mb-2 p-2">
+                    <h4 class="font-weight-bold p-2">DANH SÁCH ĐẶT PHÒNG
+                        <span class="badge badge-pill badge-danger rounded-pill">{{ total_book_room_waiting }}</span>
+                    </h4>
+                    <hr class="m-0">
+                    <div class="d-md-flex p-2">
+                        <div class="col-md-3 col-sm-3 col-xs-3 p-2 mt-auto">
+                            <form class="form-inline w-100" action="#">
+                                <div class="row d-flex w-100">
+                                    <div class="w-75 p-0">
+                                        <input class="form-control mr-sm-2 w-100" id="filter-id-card"
+                                               type="text"
+                                               placeholder="CMND khách đặt phòng..." onkeyup="searchIdCard()">
+                                    </div>
+                                    <div class="w-25 p-0">
+                                                         <span class="input-group-text border h-100 bg-dark"
+                                                               id="search-addon">
+                                                            <i class="fas fa-search text-white m-auto"></i>
+                                                         </span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-3 p-2">
+                            <span class="font-weight-bold">Ngày nhận phòng: </span>
+                            <input class="p-2 w-100 rounded-sm border form-control" type="date"
+                                   id="filter-check-in-date"
+                                   onchange="searchCheckInDate()">
+                        </div>
+                        <div class="col-md-3 p-2">
+                            <span class="font-weight-bold">Ngày trả phòng: </span>
+                            <input class="p-2 w-100 rounded-sm border form-control" type="date"
+                                   id="filter-check-out-date"
+                                   onchange="searchCheckOutDate()">
+                        </div>
+                        <div class="col-md-3 p-2 mt-auto">
+                            <button class="btn-dark btn" onclick="resetFilter()"><i class="p-1 fas fa-redo"></i>Đặt lại
+                            </button>
+                        </div>
+                    </div>
+                    <table class="table table-hover c_table">
+                        <thead class="btn-dark">
+                        <tr>
+                            <th class="text-white col-1 text-center align-middle">Ngày đặt</th>
+                            <th class="text-white col-1 text-center align-middle">Ngày nhận</th>
+                            <th class="text-white col-1 text-center align-middle">Ngày trả</th>
+                            <th class="text-white col-2 align-middle">Khách hàng</th>
+                            <th class="text-white col-1 text-center align-middle">CMND</th>
+                            <th class="text-white col-2 align-middle">Phòng đặt</th>
+                            <th class="text-white col-2 text-center align-middle">Trạng thái</th>
+                            <th class="text-white col-2 text-center align-middle">Chức năng</th>
+                        </tr>
+                        </thead>
+                        <tbody id="content-room">
+                        {% for book_room in book_rooms %}
+                            <tr id="book-room-{{ book_room.id }}">
+                                <td class="text-dark col-1 text-center align-middle">
+                                    {{ book_room.booking_date.strftime('%d-%m-%Y') }}
+                                </td>
+                                <td class="text-dark col-1 text-center align-middle">
+                                    {{ book_room.check_in_date.strftime('%d-%m-%Y') }}
+                                </td>
+                                <td class="text-dark col-1 text-center align-middle">
+                                    {{ book_room.check_out_date.strftime('%d-%m-%Y') }}
+                                </td>
+                                <td class="text-dark col-2 align-middle">
+                                    {{ book_room.customer.name }}
+                                </td>
+                                <td class="text-danger text-center col-1 font-weight-bold align-middle">
+                                    {{ book_room.customer.identification_card }}
+                                </td>
+                                <td class="text-dark col-2 align-middle">
+                                    {% for room in book_room.rooms %}
+                                        {{ room.room_number }},
+                                    {% endfor %}
+                                </td>
+                                <td class="text-dark col-2 align-middle">
+                                    {% if book_room.active.__eq__(True) and book_room.done.__eq__(False) %}
+                                        {% if (today - book_room.check_in_date).days > 0 %}
+                                            <span class="badge badge-pill badge-warning">Phiếu đăt phòng đã quá hạn nhận phòng
+                                                  <span class="font-weight-bold text-dark"> {{ (today - book_room.check_in_date).days }} </span> ngày </span>
+                                        {% else %}
+                                            <span class="badge badge-pill badge-success">Chờ nhận phòng</span>
+                                        {% endif %}
+                                    {% elif book_room.active.__eq__(False) and book_room.done.__eq__(False) %}
+                                        <span class="badge badge-pill badge-danger">Phiếu đặt phòng đã bị hủy do quá hạn</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-dark col-2 text-center align-middle">
+                                    {% if book_room.active.__eq__(True) and book_room.done.__eq__(False) %}
+                                        <a href="{{ url_for('allocating_customers_rent_room',
+                                                allocating_customer_number=2, book_room_id=book_room.id) }}">
+                                            <button class="btn btn-info text-white shadow-none"
+                                                    id="">Nhận phòng
+                                            </button>
+                                        </a>
+                                        <script>
+                                            function getHTMLRoomInBookRoom(bookRoom) {
+                                                let txtRoomNumber = ''
+                                                let txtStatus = ''
+                                                let txtButton = ''
+
+                                                for (let i = 0; i < bookRoom['room_numbers'].length; i++)
+                                                    txtRoomNumber += bookRoom['room_numbers'][i] + ', '
+
+                                                if (bookRoom['active'] === true && bookRoom['done'] === false) {
+                                                    if (bookRoom['days'] > 0) {
+                                                        txtStatus = `<span class="badge badge-pill badge-warning">Phiếu đăt phòng đã quá hạn nhận phòng
+                                                                           <span class="font-weight-bold text-dark"> ${bookRoom['days']} </span> ngày
+                                                                    </span>`
+                                                    } else {
+                                                        txtStatus = `<span class="badge badge-pill badge-success">Chờ nhận phòng</span>`
+                                                    }
+                                                    txtButton = `<a href="{{ url_for('allocating_customers_rent_room', allocating_customer_number=2, book_room_id=book_room.id) }}">
+                                                        <button class="btn btn-info text-white shadow-none" onclick="">Nhận phòng</button></a>`
+
+                                                } else if (bookRoom['active'] === false && bookRoom['done'] === false) {
+                                                    txtStatus = `<span class="adge badge-pill badge-danger">Phiếu đặt phòng đã bị hủy do quá hạn</span>`
+                                                    txtButton = `<button class="btn btn-danger text-white shadow-none" onclick="inactiveBookRoom(${bookRoom['book_room_id']})">Không hiển thị</button>`
+                                                }
+
+                                                return `
+                                                        <tr id="book-room-${bookRoom['book_room_id']}">
+                                                            <td class="text-dark col-1 text-center align-middle">
+                                                                ${bookRoom['booking_date']}
+                                                            </td>
+                                                            <td class="text-dark col-1 text-center align-middle">
+                                                                ${bookRoom['check_in_date']}
+                                                            </td>
+                                                            <td class="text-dark col-1 text-center align-middle">
+                                                                ${bookRoom['check_out_date']}
+                                                            </td>
+                                                            <td class="text-dark col-2 align-middle">
+                                                                 ${bookRoom['customer_name']}
+                                                            </td>
+                                                            <td class="text-danger text-center col-1 font-weight-bold align-middle">
+                                                                ${bookRoom['identification_card']}
+                                                            </td>
+                                                            <td class="text-dark col-2 align-middle">
+                                                                ${txtRoomNumber}
+                                                            </td>
+                                                            <td class="text-dark col-2 align-middle">
+                                                                ${txtStatus}
+                                                            </td>
+                                                            <td class="text-dark col-2 text-center align-middle">
+                                                                ${txtButton}
+                                                            </td>
+                                                        </tr>
+                                                    `
+                                            }
+                                        </script>
+                                    {% elif book_room.active.__eq__(False) and book_room.done.__eq__(False) %}
+                                        <button class="btn btn-danger text-white shadow-none"
+                                                id=""
+                                                onclick="inactiveBookRoom({{ book_room.id }})">Không hiển thị
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- End Container fluid  -->
+        </div>
+        <!-- End Page wrapper  -->
+
+        <!-- Modal -->
+        <div class="modal fade" id="my-modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <i class="fa-solid fa-circle-exclamation text-danger font-24 p-2"></i>
+                        <h4 class="modal-title font-weight-bold font-20" id="id-modal-title">Tiêu đề</h4>
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body font-16" id="id-modal-body">
+                        Nội dung
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger text-light" data-dismiss="modal">Đóng</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- End Modal -->
+    </div>
+{% endblock %}
+
+{% block tail_js %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/employee/ajax/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/employee/ajax/rent-advance.js') }}"></script>
+{% endblock %}
